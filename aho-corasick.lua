@@ -71,8 +71,9 @@ function M.build(m)
 		 local ch = t[p].ch
 		 local fail = t[path].fail
 		 
-		 while fail ~= root and t[fail].to[ch] ~= nil do
+		 while t[fail].fail ~= root and t[fail].to[ch] ~= nil do
 			fail = t[fail].fail
+			ch = t[fail].ch
 		 end
 
 		 if t[fail].to[ch] ~= nil and t[fail].to[ch] ~= p then
@@ -86,10 +87,10 @@ function M.build(m)
    return t
 end
 
--- match: checks to see if the passed in string matches the passed in
--- tree created with build. If all is true (the default) an array of
--- all matches is returned. If all is false then only the first match
--- is returned. If no matches an empty table is returned.
+-- match: checks to see if the passed in string matches the passed
+-- in tree created with build. If all is true (the default) an
+-- array of all matches is returned. If all is false then only the
+-- first match is returned.
 function M.match(t, s, all)
    if all == nil then
 	  all = true
