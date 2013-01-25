@@ -20,8 +20,8 @@ local function make(t, c, f)
    t[c]      = {}
    t[c].to   = {}
    t[c].fail = f
-   t[c].hit  = {}
-   t[c].ch    = c:sub(-1,-1)
+   t[c].hit  = root
+   t[c].word = false
 end
 
 -- build: builds the Aho-Corasick data structure from an array of
@@ -33,9 +33,8 @@ function M.build(m)
    for i = 1, #m do
 	  local current = root
 
-	  -- Build the tos and ends which capture the transitions within
-	  -- the tree and whether a node is at the end of one of the
-	  -- strings to match against
+	  -- Build the tos which capture the transitions within
+	  -- the tree
 
    	  for j = 1, m[i]:len() do
 		 local c = m[i]:sub(j,j)
@@ -54,13 +53,14 @@ function M.build(m)
 		 current = path
 	  end
 
-	  table.insert(t[current].hit, m[i])
+	  t[m[i]].word = true
    end
 
    -- Build the fails which show how to backtrack when a fail matches
+   -- and build the hits which connect nodes to suffixes that are
+   -- words
 
-   local q = {}
-   table.insert(q, root)
+   local q = {root}
 
    while #q > 0 do
 	  local path = table.remove(q, 1)
@@ -68,19 +68,19 @@ function M.build(m)
 	  for c, p in pairs(t[path].to) do
 		 table.insert(q, p)
 
-		 local ch = t[p].ch
-		 local fail = t[path].fail
-		 
-		 while t[fail].fail ~= root and t[fail].to[ch] ~= nil do
-			fail = t[fail].fail
-			ch = t[fail].ch
+		 local fail = p:sub(2)
+		 while fail ~= "" and t[fail] == nil do
+			fail = fail:sub(2)
 		 end
+		 if fail == "" then fail = root end
+		 t[p].fail = fail
 
-		 if t[fail].to[ch] ~= nil and t[fail].to[ch] ~= p then
-			t[p].fail = t[fail].to[ch]
-		 else
-			t[p].fail = root
+		 local hit = p:sub(2)
+		 while hit ~= "" and (t[hit] == nil or not t[hit].word) do
+			hit = hit:sub(2)
 		 end
+		 if hit == "" then hit = root end
+		 t[p].hit = hit
 	  end
    end
 
@@ -111,13 +111,17 @@ function M.match(t, s, all)
 	  if n ~= nil then
 		 path = n
 
-		 if next(t[n].hit) ~= nil then
-			for i, v in ipairs(t[n].hit) do
-			   table.insert(hits, v)
-			   if all == false then
-				  return hits
-			   end
-			end
+		 if t[n].word then
+			table.insert(hits, n)
+		 end
+
+		 while t[n].hit ~= root do
+			n = t[n].hit
+			table.insert(hits, n)
+		 end
+
+		 if all == false and next(hits) ~= nil then
+			return hits
 		 end
 	  end
    end
