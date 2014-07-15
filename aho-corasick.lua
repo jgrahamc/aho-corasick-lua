@@ -11,6 +11,8 @@
 -- r == {'to', 'find'}
 
 local M = {}
+local byte = string.byte
+local char = string.char
 
 local root = ""
 
@@ -37,8 +39,8 @@ function M.build(m)
 	  -- the tree
 
    	  for j = 1, m[i]:len() do
-		 local c = m[i]:sub(j,j)
-		 local path = current .. c
+		 local c = byte(m[i], j)
+		 local path = current .. char(c)
 
 		 if t[current].to[c] == nil then
 			t[current].to[c] = path
@@ -98,9 +100,10 @@ function M.match(t, s, all)
 
    local path = root
    local hits = {}
+   local hits_idx = 0
 
    for i = 1,s:len() do
-	  local c = s:sub(i,i)
+	  local c = byte(s, i)
 
 	  while t[path].to[c] == nil and path ~= root do
 			path = t[path].fail
@@ -112,15 +115,17 @@ function M.match(t, s, all)
 		 path = n
 
 		 if t[n].word then
-			table.insert(hits, n)
+			hits_idx = hits_idx + 1
+			hits[hits_idx] = n
 		 end
 
 		 while t[n].hit ~= root do
 			n = t[n].hit
-			table.insert(hits, n)
+			hits_idx = hits_idx + 1
+			hits[hits_idx] = n
 		 end
 
-		 if all == false and next(hits) ~= nil then
+		 if all == false and hits_idx > 0 then
 			return hits
 		 end
 	  end
