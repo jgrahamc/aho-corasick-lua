@@ -11,17 +11,17 @@ function test(s, d, r)
     count = count + 1
     local t = AC.build(d)
     local f = AC.match(t, s)
-    
+
     if #r ~= #f then
         error("Wrong number of results " .. #r .. ", " .. #f, t)
     end
-    
+
     for i = 1,#r do
         if r[i] ~= f[i] then
             error("Non-matching result " .. r[i] .. ", " .. f[i], t)
         end
     end
-    
+
     print(count .. " ok")
 end
 

@@ -18,7 +18,7 @@ local root = ""
 
 -- make: creates a new entry in t for the given string c with optional fail
 -- state
-local function make(t, c, f) 
+local function make(t, c, f)
     t[c]      = {}
     t[c].to   = {}
     t[c].fail = f
@@ -27,53 +27,53 @@ local function make(t, c, f)
 end
 
 -- build: builds the Aho-Corasick data structure from an array of strings
-function M.build(m) 
+function M.build(m)
     local t = {}
     make(t, root, root)
-    
+
     for i = 1, #m do
         local current = root
-        
+
         -- Build the tos which capture the transitions within the tree
-        
+
         for j = 1, m[i]:len() do
             local c = byte(m[i], j)
             local path = current .. char(c)
-            
+
             if t[current].to[c] == nil then
                 t[current].to[c] = path
-                
+
                 if current == root then
                     make(t, path, root)
                 else
                     make(t, path)
                 end
             end
-            
+
             current = path
         end
-        
+
         t[m[i]].word = true
     end
-    
+
     -- Build the fails which show how to backtrack when a fail matches and
     -- build the hits which connect nodes to suffixes that are words
-    
+
     local q = {root}
-    
+
     while #q > 0 do
         local path = table.remove(q, 1)
-        
+
         for c, p in pairs(t[path].to) do
             table.insert(q, p)
-            
+
             local fail = p:sub(2)
             while fail ~= "" and t[fail] == nil do
                 fail = fail:sub(2)
             end
             if fail == "" then fail = root end
             t[p].fail = fail
-            
+
             local hit = p:sub(2)
             while hit ~= "" and (t[hit] == nil or not t[hit].word) do
                 hit = hit:sub(2)
@@ -82,7 +82,7 @@ function M.build(m)
             t[p].hit = hit
         end
     end
-    
+
     return t
 end
 
@@ -93,41 +93,42 @@ function M.match(t, s, all)
     if all == nil then
         all = true
     end
-    
+
     local path = root
     local hits = {}
     local hits_idx = 0
-    
+
     for i = 1,s:len() do
         local c = byte(s, i)
-        
+
         while t[path].to[c] == nil and path ~= root do
             path = t[path].fail
         end
-        
+
         local n = t[path].to[c]
-        
+
         if n ~= nil then
             path = n
-            
+
             if t[n].word then
                 hits_idx = hits_idx + 1
                 hits[hits_idx] = n
             end
-            
+
             while t[n].hit ~= root do
                 n = t[n].hit
                 hits_idx = hits_idx + 1
                 hits[hits_idx] = n
             end
-            
+
             if all == false and hits_idx > 0 then
                 return hits
             end
         end
     end
-    
+
     return hits
 end
 
 return M
+
